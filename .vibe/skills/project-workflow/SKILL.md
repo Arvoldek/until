@@ -1,6 +1,6 @@
 ---
 name: project-workflow
-description: Load this skill when the user asks to work on an issue, create a task, manage the project board, create a PR, or follow the Until Development workflow. Covers all flows: picking up work, creating issues, status changes, PR creation, and edge cases.
+description: 'Load this skill when the user asks to work on an issue, create a task, manage the project board, create a PR, or follow the Until Development workflow. Covers all flows: picking up work, creating issues, status changes, PR creation, and edge cases.'
 ---
 
 # Project Workflow — Until Development
