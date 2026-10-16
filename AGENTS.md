@@ -6,6 +6,39 @@ Instructions for AI agents working on this repository.
 
 **Until** — a Flutter application. Repo: `Arvoldek/until`.
 
+## Available Skills
+
+The following Flutter/Dart skills are installed globally and available to load on demand. Load the relevant skill when the task matches its purpose — don't reinvent the wheel.
+
+| Category | Skill | Use when |
+|----------|-------|----------|
+| **Architecture** | `flutter-apply-architecture-best-practices` | Structuring new features or refactoring — layered UI/Logic/Data approach |
+| **Architecture** | `flutter-setup-declarative-routing` | Adding navigation with `go_router` — URL-based routing, deep linking |
+| **Architecture** | `flutter-setup-localization` | Adding multi-language support — `flutter_localizations`, `intl`, `l10n.yaml` |
+| **State & Data** | `flutter-use-http-package` | Fetching or sending data to a REST API — GET, POST, PUT, DELETE |
+| **State & Data** | `flutter-implement-json-serialization` | Creating model classes with `fromJson`/`toJson` using `dart:convert` |
+| **State & Data** | `dart-use-pattern-matching` | Parsing polymorphic JSON, sealed classes, destructuring, switch expressions |
+| **State & Data** | `dart-use-primary-constructors` | Writing Dart 3+ primary constructors, concise syntax |
+| **State & Data** | `dart-generate-test-mocks` | Creating mocks with `mockito` + `build_runner` for unit tests |
+| **UI & Widgets** | `flutter-build-responsive-layout` | Adapting UI for mobile, tablet, and desktop — `LayoutBuilder`, `MediaQuery` |
+| **UI & Widgets** | `flutter-add-widget-preview` | Adding interactive previews with `previews.dart` for UI components |
+| **UI & Widgets** | `flutter-fix-layout-issues` | Fixing overflow errors, unbounded constraints, RenderFlex issues |
+| **Testing** | `flutter-add-widget-test` | Writing `WidgetTester` tests — rendering, tapping, scrolling, text input |
+| **Testing** | `flutter-add-integration-test` | Setting up `integration_test` for end-to-end app flows |
+| **Testing** | `dart-add-unit-test` | Writing unit tests with `package:test` for functions, methods, classes |
+| **Testing** | `dart-collect-coverage` | Collecting test coverage and generating LCOV reports |
+| **Testing** | `dart-migrate-to-checks-package` | Migrating from `package:matcher` `expect` to `package:checks` |
+| **Code Quality** | `dart-run-static-analysis` | Running `dart analyze` and `dart fix --apply` before committing |
+| **Code Quality** | `dart-write-documentation` | Writing `///` doc comments following Effective Dart guidelines |
+| **Code Quality** | `dart-use-doc-examples` | Adding `{@example}` code examples to dartdoc |
+| **Code Quality** | `dart-use-path-package` | File/directory path manipulation with `package:path` |
+| **Debugging** | `dart-fix-runtime-errors` | Fetching stack traces, locating failing lines, hot reload verification |
+| **Tooling** | `dart-resolve-package-conflicts` | Fixing `pub get` failures from incompatible package versions |
+| **Tooling** | `dart-setup-ffi-assets` | Compiling C/C++ into native assets via `package:hooks` |
+| **Tooling** | `dart-use-ffigen` | Generating FFI bindings with `package:ffigen` |
+| **Tooling** | `flutter-use-http-package` | REST API calls with `package:http` |
+| **Tooling** | `dart-build-cli-app` | Building Dart CLI tools (not for Flutter UI) |
+
 ## Flutter Coding Guidelines
 
 All agents writing Dart/Flutter code must follow these guidelines.
