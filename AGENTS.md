@@ -128,12 +128,44 @@ gh api graphql -f query='query {
 }'
 ```
 
+## Branch Naming Convention
+
+All branches must follow this format:
+
+```
+<type>/issue-<N>-<short-description>
+```
+
+| Type | Work Type | Example |
+|------|-----------|---------|
+| `bug/` | Bug | `bug/issue-42-fix-login-crash` |
+| `feature/` | Feature | `feature/issue-15-add-dark-mode` |
+| `task/` | Task | `task/issue-8-refactor-auth-service` |
+| `epic/` | Epic | `epic/issue-3-user-onboarding` |
+
+**Rules:**
+- Always include the issue number (`issue-<N>`)
+- Type must match the **Work Type** field on the project board
+- Lowercase only, hyphens as separators (no spaces, no underscores)
+- Short description: 3–5 words derived from the issue title
+- Create the branch from `main`
+
+```bash
+# Example: working on issue #42 (a bug titled "Fix login crash on startup")
+git checkout main && git pull
+git checkout -b bug/issue-42-fix-login-crash
+```
+
 ## Pull Request Workflow
 
-1. Create a branch and PR: `gh pr create --repo Arvoldek/until --title "..." --body "Closes #123"`
-2. PR is auto-added to project → **Review** (when linked to an issue)
-3. Request review; reviewer approves → **Merge**
-4. Merge the PR → **Done**
+1. Create a branch following the [naming convention](#branch-naming-convention)
+2. Implement, test, commit
+3. Create PR: `gh pr create --repo Arvoldek/until --title "..." --body "Closes #123"`
+4. PR is auto-added to project → **Review** (when linked to an issue)
+5. Request review; reviewer approves → **Merge**
+6. Merge the PR → **Done**
+
+**PR title convention:** Same as branch description, e.g. `Fix login crash on startup (#42)`
 
 Always link PRs to issues with `Closes #123` or `Fixes #123` in the PR body.
 

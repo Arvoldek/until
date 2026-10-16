@@ -45,6 +45,28 @@ Status changes are **automated** by project workflows. Do not set Status manuall
 | Item reopened | Status → In Progress |
 | Code changes requested | Status → In Progress |
 
+### Branch Naming Convention
+
+```
+<type>/issue-<N>-<short-description>
+```
+
+| Type | Work Type | Example |
+|------|-----------|---------|
+| `bug/` | Bug | `bug/issue-42-fix-login-crash` |
+| `feature/` | Feature | `feature/issue-15-add-dark-mode` |
+| `task/` | Task | `task/issue-8-refactor-auth-service` |
+| `epic/` | Epic | `epic/issue-3-user-onboarding` |
+
+**Rules:**
+- Always include the issue number
+- Type must match the **Work Type** field
+- Lowercase, hyphens only (no spaces, no underscores)
+- Short description: 3–5 words from the issue title
+- Branch from `main`
+
+**PR title:** `<Title Case description> (#<N>)` — e.g. `Fix login crash on startup (#42)`
+
 ---
 
 ## Flows
@@ -72,11 +94,16 @@ Status changes are **automated** by project workflows. Do not set Status manuall
 3. **Pick the highest-priority item.** If tied, pick the oldest.
 4. **Set Status → In Progress** (see [Set Field](#set-field) below).
 5. **Ensure Priority and Work Type are set.** If missing, set defaults: Priority = Medium, Work Type = Task. For bug reports, set Work Type = Bug.
-6. **Create a branch:** `git checkout -b fix/issue-<N>-<short-description>`
-7. **Implement, test, commit.**
-8. **Create PR with `Closes #N`:**
+6. **Create a branch** following the [naming convention](#branch-naming-convention):
    ```bash
-   gh pr create --repo Arvoldek/until --title "<title>" --body "Closes #<N>\n\n<description>"
+   git checkout main && git pull
+   git checkout -b <type>/issue-<N>-<short-description>
+   # e.g.: git checkout -b bug/issue-42-fix-login-crash
+   ```
+7. **Implement, test, commit.**
+8. **Create PR** with title `<Title> (#<N>)` and body `Closes #<N>`:
+   ```bash
+   gh pr create --repo Arvoldek/until --title "Fix login crash on startup (#42)" --body "Closes #42\n\n<description>"
    ```
 9. **Status auto-moves** to Review → Merge → Done. No manual Status changes needed.
 10. **Report:** PR URL, issue number, what was done.
@@ -93,11 +120,11 @@ Status changes are **automated** by project workflows. Do not set Status manuall
      }
    }"
    ```
-3. **Check current Status.** If already Done, warn the user. If already In Progress, skip to step 5.
+3. **Check current Status.** If already Done, warn the user. If already In Progress, skip to step 6.
 4. **Set Status → In Progress.**
 5. **Set Priority and Work Type** if missing (defaults: Medium, Task).
-6. **Create branch, implement, test, commit.**
-7. **Create PR with `Closes #N`.**
+6. **Create a branch** following the [naming convention](#branch-naming-convention), then implement, test, commit.
+7. **Create PR** with title `<Title> (#<N>)` and body `Closes #<N>`.
 8. **Report results.**
 
 ### Flow 3: "Create an issue for X" (create only, don't work on it)
@@ -185,16 +212,47 @@ Status auto-moves to Done. Report.
 
 ### Flow 10: "Create a PR for #N" (PR only, code is ready)
 
-1. **Check if a branch exists** for this issue. If not, create one.
+1. **Check if a branch exists** for this issue (following the [naming convention](#branch-naming-convention)). If not, create one.
 2. **Check if a PR already exists.** If yes, report the existing PR URL. Do not create a duplicate.
-3. **Create the PR:**
+3. **Create the PR** with title `<Title> (#<N>)` and body `Closes #<N>`:
    ```bash
-   gh pr create --repo Arvoldek/until --title "<title>" --body "Closes #N\n\n<description>"
+   gh pr create --repo Arvoldek/until --title "Fix login crash on startup (#42)" --body "Closes #42\n\n<description>"
    ```
 4. **Status auto-moves** to Review.
 5. **Report PR URL.**
 
 ---
+
+## Helper: Generate Branch Name
+
+```bash
+# Generate a branch name from issue number, work type, and title
+generate_branch() {
+  local issue_num="$1"
+  local work_type="$2"  # Bug, Feature, Task, Epic
+  local title="$3"
+
+  # Map Work Type to branch prefix
+  local prefix
+  case "$work_type" in
+    Bug)     prefix="bug" ;;
+    Feature) prefix="feature" ;;
+    Task)    prefix="task" ;;
+    Epic)    prefix="epic" ;;
+    *)       prefix="task" ;;
+  esac
+
+  # Convert title to lowercase, replace spaces with hyphens, keep only alphanumeric and hyphens
+  local desc=$(echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 ]//g' | tr ' ' '-' | cut -c1-40 | sed 's/-*$//')
+
+  echo "${prefix}/issue-${issue_num}-${desc}"
+}
+
+# Examples:
+# generate_branch 42 "Bug" "Fix login crash on startup"     → bug/issue-42-fix-login-crash-on-startup
+# generate_branch 15 "Feature" "Add dark mode support"     → feature/issue-15-add-dark-mode-support
+# generate_branch 8 "Task" "Refactor auth service"         → task/issue-8-refactor-auth-service
+```
 
 ## Helper: Set Field
 
@@ -265,6 +323,9 @@ find_item() {
 | Missing Priority | Default to Medium |
 | Missing Work Type | Default to Task (or Bug if it's a bug report) |
 | Branch already exists | Reuse it, or ask the user |
+| Branch name doesn't match convention | Rename it: `git branch -m <old> <new>` using `generate_branch` |
+| Work Type changed after branch creation | Rename branch to match new Work Type prefix |
+| Working on main directly | Stop. Create a branch first following the convention |
 | User says "create but don't work on it" | Create issue, set fields, leave in Backlog. No branch, no PR |
 | User says "just move to In Progress" | Only change Status. No code changes |
 | Token missing `project` scope | Run `gh auth refresh -s project` |
