@@ -100,7 +100,11 @@ Status changes are **automated** by project workflows. Do not set Status manuall
    git checkout -b <type>/issue-<N>-<short-description>
    # e.g.: git checkout -b bug/issue-42-fix-login-crash
    ```
-7. **Implement, test, commit.**
+7. **Implement, test, commit.** Follow the [Flutter Coding Guidelines](../../../AGENTS.md#flutter-coding-guidelines) in AGENTS.md:
+   - Layered architecture (presentation → application → data)
+   - Riverpod for state, const constructors, immutable data classes
+   - Run `dart format .` && `flutter analyze` && `flutter test` before committing
+   - Commit messages: `<type>(<scope>): <description>`
 8. **Create PR** with title `<Title> (#<N>)` and body `Closes #<N>`:
    ```bash
    gh pr create --repo Arvoldek/until --title "Fix login crash on startup (#42)" --body "Closes #42\n\n<description>"
@@ -123,7 +127,7 @@ Status changes are **automated** by project workflows. Do not set Status manuall
 3. **Check current Status.** If already Done, warn the user. If already In Progress, skip to step 6.
 4. **Set Status → In Progress.**
 5. **Set Priority and Work Type** if missing (defaults: Medium, Task).
-6. **Create a branch** following the [naming convention](#branch-naming-convention), then implement, test, commit.
+6. **Create a branch** following the [naming convention](#branch-naming-convention), then implement, test, commit. Follow the [Flutter Coding Guidelines](../../../AGENTS.md#flutter-coding-guidelines) in AGENTS.md.
 7. **Create PR** with title `<Title> (#<N>)` and body `Closes #<N>`.
 8. **Report results.**
 

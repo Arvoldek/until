@@ -6,6 +6,253 @@ Instructions for AI agents working on this repository.
 
 **Until** — a Flutter application. Repo: `Arvoldek/until`.
 
+## Flutter Coding Guidelines
+
+All agents writing Dart/Flutter code must follow these guidelines.
+
+### Architecture
+
+Use a **layered, feature-first** architecture:
+
+```
+lib/
+├── main.dart                  # Entry point only
+├── app/                       # App-level: theme, router, DI setup
+│   ├── app.dart
+│   ├── theme.dart
+│   └── router.dart
+├── core/                      # Cross-cutting concerns
+│   ├── errors/                # Failure types, exceptions
+│   ├── network/               # HTTP client, interceptors
+│   └── utils/                 # Extensions, helpers, constants
+├── shared/                    # Reusable across features
+│   ├── widgets/               # Common UI components
+│   └── extensions/            # Dart extensions
+└── features/                  # One folder per feature
+    └── <feature_name>/
+        ├── presentation/      # Widgets, screens, pages
+        ├── application/       # State management, business logic
+        └── data/              # Models, repositories, data sources
+```
+
+**Rules:**
+- `presentation` depends on `application`, never the reverse
+- `application` depends on `data`, never the reverse
+- `data` has no Flutter imports (pure Dart)
+- Features don't import from other features directly — use `shared/` or `core/`
+
+### State Management
+
+- **Riverpod** for app-wide and feature state (recommended: `flutter_riverpod`)
+- **StatefulWidget + setState** only for purely local UI state (e.g., animation controllers, text field focus)
+- Keep providers scoped as narrowly as possible (use `ProviderScope` overrides in tests)
+- Never store BuildContext in providers or state objects
+
+```dart
+// Good: Riverpod provider
+final counterProvider = StateNotifierProvider<CounterNotifier, int>((ref) {
+  return CounterNotifier();
+});
+
+// Good: ConsumerWidget for UI
+final counter = ref.watch(counterProvider);
+```
+
+### Widget Best Practices
+
+- **Prefer `StatelessWidget`** — use `StatefulWidget` only when you need local mutable state
+- **Use `const` constructors** everywhere possible — wrap widgets in `const` to prevent unnecessary rebuilds
+- **Extract widgets** into separate files when a `build` method exceeds ~50 lines or a widget is reused
+- **Use `Key`** for items in lists (`ValueKey`, `ObjectKey`) to preserve state across reorders
+- **Avoid deep widget trees** — compose small, single-purpose widgets
+- **Use `LayoutBuilder`** for responsive layouts, not `MediaQuery` size checks everywhere
+
+```dart
+// Good: const constructor
+class MyCard extends StatelessWidget {
+  const MyCard({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8), // const padding
+        child: Text(title),
+      ),
+    );
+  }
+}
+```
+
+### Dart Style
+
+- Follow [Effective Dart](https://dart.dev/effective-dart)
+- **Single quotes** for strings (enforced by `flutter_lints`)
+- **Trailing commas** in multi-line argument lists (enables better formatting)
+- **`final`** for variables that don't change, **`const`** for compile-time constants
+- **Naming:** `camelCase` for variables/functions, `PascalCase` for classes, `snake_case` for files
+- File names: `snake_case.dart` (e.g., `user_profile_page.dart`)
+
+### Async Programming
+
+- **Always handle Futures** — never fire-and-forget without `.catchError` or `try/catch`
+- Use `async/await` over raw `.then()` chains
+- For streams, use `StreamProvider`/`StreamBuilder` or `ref.listen`
+- Cancel subscriptions in `dispose()`
+
+```dart
+// Good
+try {
+  final user = await userRepository.fetchUser(id);
+  return user;
+} catch (e) {
+  return null; // or handle error properly
+}
+
+// Bad — unhandled Future
+userRepository.fetchUser(id); // missing await
+```
+
+### Error Handling
+
+- Use a **Result/Failure pattern** for operations that can fail (e.g., network calls)
+- Never silently swallow errors with empty `catch` blocks
+- Define typed failures in `core/errors/`
+
+```dart
+// Good: sealed class for results
+sealed class Result<T> {
+  const Result();
+}
+
+class Success<T> extends Result<T> {
+  const Success(this.value);
+  final T value;
+}
+
+class Failure<T> extends Result<T> {
+  const Failure(this.error);
+  final String error;
+}
+
+// Usage with pattern matching
+final result = await repo.fetchData();
+switch (result) {
+  case Success(:final value):
+    // handle success
+  case Failure(:final error):
+    // handle error
+}
+```
+
+### Immutability & Data Classes
+
+- Make **data classes immutable** (all fields `final`)
+- Use **`copyWith`** for creating modified copies
+- Use **`Equatable`** (or `freezed`) for value equality in state classes
+- Use **`freezed`** or **`json_serializable`** for models with JSON serialization
+
+```dart
+// Good: immutable data class
+class User {
+  const User({required this.id, required this.name});
+
+  final String id;
+  final String name;
+
+  User copyWith({String? name}) => User(id: id, name: name ?? this.name);
+
+  factory User.fromJson(Map<String, dynamic> json) => User(
+    id: json['id'] as String,
+    name: json['name'] as String,
+  );
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
+}
+```
+
+### Testing
+
+- **Unit tests** for business logic in `application/` and `data/`
+- **Widget tests** for UI components in `presentation/`
+- **Integration tests** for critical user flows
+- Run `flutter test` before committing
+- Aim for meaningful tests, not just coverage numbers
+
+```dart
+// test/features/counter/application/counter_notifier_test.dart
+void main() {
+  group('CounterNotifier', () {
+    test('increments value', () {
+      final notifier = CounterNotifier();
+      notifier.increment();
+      expect(notifier.state, 1);
+    });
+  });
+}
+```
+
+### Performance
+
+- Use **`const`** constructors aggressively — they prevent rebuilds
+- Use **`ListView.builder`** (not `ListView`) for long or dynamic lists
+- Use **`RepaintBoundary`** around complex widgets that don't change often
+- Avoid `setState` on large widget trees — use fine-grained providers
+- Profile with **Flutter DevTools** before optimizing
+
+### Documentation
+
+- Add **`///` doc comments** for all public classes, methods, and fields
+- Document **why**, not just what
+- Keep README updated for each feature
+
+```dart
+/// Fetches a user by their unique [id].
+///
+/// Returns a [User] on success, or throws a [UserNotFoundException]
+/// if no user exists with the given [id].
+Future<User> fetchUser(String id) async { ... }
+```
+
+### Pre-Commit Checklist
+
+Before committing, always run:
+
+```bash
+# Format code
+dart format .
+
+# Analyze for issues
+flutter analyze
+
+# Run tests
+flutter test
+
+# All must pass with zero issues before committing
+```
+
+### Commit Messages
+
+```
+<type>(<scope>): <short description>
+
+<optional body>
+
+<optional footer>
+```
+
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`
+
+Examples:
+```
+feat(auth): add login screen with email/password
+fix(profile): resolve crash when avatar fails to load
+refactor(home): extract widget into separate file
+test(auth): add unit tests for login notifier
+```
+
 ## GitHub Project Board
 
 All work is tracked on the **"Until Development"** GitHub Project:
