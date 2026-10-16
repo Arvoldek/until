@@ -1,0 +1,174 @@
+name: Project Automation
+
+# Automates the "Until Development" GitHub Project board.
+# Replaces the built-in project workflows (which can only be toggled in the UI).
+#
+# Required secret:
+#   PROJECT_TOKEN — a Personal Access Token with the "project" scope.
+#   Create at: https://github.com/settings/tokens
+#   Add at:    Repo → Settings → Secrets and variables → Actions → New repository secret
+
+on:
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  update-project:
+    name: Update Project Board
+    runs-on: ubuntu-latest
+    if: github.repository == 'Arvoldek/until'
+    steps:
+      - name: Automate project board
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_TOKEN }}
+          script: |
+            const PROJECT_ID = 'PVT_kwHOAfdJeM4BnX_0';
+            const STATUS_FIELD_ID = 'PVTSSF_lAHOAfdJeM4BnX_0zhl864c';
+
+            // Status option IDs
+            const STATUS = {
+              backlog:     '860fcdee', // Backlog
+              inProgress:  'c677595e', // In Progress
+              review:      'f72914a8', // Review
+              done:        '86a6c229', // Done
+            };
+
+            const eventName = context.eventName;
+            const action = context.action;
+            const payload = context.payload;
+
+            // ── Helpers ──────────────────────────────────────────────
+
+            async function addToProject(contentId) {
+              const result = await github.graphql(
+                `mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item { id }
+                  }
+                }`,
+                { projectId: PROJECT_ID, contentId }
+              );
+              return result.addProjectV2ItemById.item.id;
+            }
+
+            async function setStatus(itemId, optionId) {
+              await github.graphql(
+                `mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: ID!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item { id }
+                  }
+                }`,
+                {
+                  projectId: PROJECT_ID,
+                  itemId,
+                  fieldId: STATUS_FIELD_ID,
+                  optionId,
+                }
+              );
+            }
+
+            async function findProjectItem(contentId) {
+              // Paginate through project items to find the one matching this issue/PR
+              let cursor = null;
+              do {
+                const result = await github.graphql(
+                  `query($projectId: ID!, $cursor: String) {
+                    node(id: $projectId) {
+                      ... on ProjectV2 {
+                        items(first: 100, after: $cursor) {
+                          pageInfo { hasNextPage endCursor }
+                          nodes {
+                            id
+                            content {
+                              ... on Issue { id }
+                              ... on PullRequest { id }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }`,
+                  { projectId: PROJECT_ID, cursor }
+                );
+                const items = result.node.items;
+                for (const item of items.nodes) {
+                  if (item.content && item.content.id === contentId) {
+                    return item.id;
+                  }
+                }
+                cursor = items.pageInfo.hasNextPage ? items.pageInfo.endCursor : null;
+              } while (cursor);
+              return null;
+            }
+
+            async function addAndSetStatus(contentId, optionId) {
+              try {
+                const itemId = await addToProject(contentId);
+                await setStatus(itemId, optionId);
+                console.log(`Added to project, Status set to option ${optionId}`);
+              } catch (err) {
+                // Item might already be in the project — try to find and update it
+                if (err.message && err.message.includes('already')) {
+                  const itemId = await findProjectItem(contentId);
+                  if (itemId) {
+                    await setStatus(itemId, optionId);
+                    console.log(`Item already in project, Status updated to option ${optionId}`);
+                  }
+                } else {
+                  throw err;
+                }
+              }
+            }
+
+            // ── Event handlers ───────────────────────────────────────
+
+            if (eventName === 'issues' && action === 'opened') {
+              // New issue → Backlog
+              await addAndSetStatus(payload.issue.node_id, STATUS.backlog);
+              console.log(`Issue #${payload.issue.number} → Backlog`);
+            }
+
+            else if (eventName === 'issues' && action === 'closed') {
+              // Issue closed → Done
+              const itemId = await findProjectItem(payload.issue.node_id);
+              if (itemId) {
+                await setStatus(itemId, STATUS.done);
+                console.log(`Issue #${payload.issue.number} → Done`);
+              } else {
+                console.log(`Issue #${payload.issue.number} not in project, skipping`);
+              }
+            }
+
+            else if (eventName === 'pull_request' && action === 'opened') {
+              // New PR → Review
+              await addAndSetStatus(payload.pull_request.node_id, STATUS.review);
+              console.log(`PR #${payload.pull_request.number} → Review`);
+            }
+
+            else if (eventName === 'pull_request' && action === 'closed') {
+              const itemId = await findProjectItem(payload.pull_request.node_id);
+              if (!itemId) {
+                console.log(`PR #${payload.pull_request.number} not in project, skipping`);
+                return;
+              }
+              if (payload.pull_request.merged) {
+                // PR merged → Done
+                await setStatus(itemId, STATUS.done);
+                console.log(`PR #${payload.pull_request.number} merged → Done`);
+              } else {
+                // PR closed without merge → back to Backlog
+                await setStatus(itemId, STATUS.backlog);
+                console.log(`PR #${payload.pull_request.number} closed (not merged) → Backlog`);
+              }
+            }
