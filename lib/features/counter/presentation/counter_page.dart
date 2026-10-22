@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/counter_notifier.dart';
@@ -13,24 +13,28 @@ class CounterPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final counter = ref.watch(counterProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text('$counter', style: Theme.of(context).textTheme.headlineMedium),
-          ],
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(middle: Text(title)),
+      child: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('You have pushed the button this many times:'),
+              Text(
+                '$counter',
+                style: CupertinoTheme.of(context)
+                    .textTheme
+                    .navLargeTitleTextStyle,
+              ),
+              const SizedBox(height: 24),
+              CupertinoButton.filled(
+                onPressed: () => ref.read(counterProvider.notifier).increment(),
+                child: const Icon(CupertinoIcons.add),
+              ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => ref.read(counterProvider.notifier).increment(),
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }

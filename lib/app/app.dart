@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 
 import '../features/counter/presentation/counter_page.dart';
 
@@ -8,11 +8,13 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return CupertinoApp(
       title: 'Until',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      theme: const CupertinoThemeData(
+        brightness: Brightness.light,
+        primaryColor: CupertinoColors.systemPurple,
       ),
+      localizationsDelegates: GlobalCupertinoLocalizations.delegates,
       home: const CounterPage(title: 'Until'),
     );
   }
