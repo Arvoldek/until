@@ -43,6 +43,8 @@ The following Flutter/Dart skills are installed globally and available to load o
 
 All agents writing Dart/Flutter code must follow these guidelines.
 
+> **Design rules:** See [docs/design-guidelines.md](docs/design-guidelines.md) for the app's iOS design system — Cupertino widgets, adaptive colors, typography, layout patterns, and accessibility requirements. All UI code must follow these guidelines.
+
 ### Architecture
 
 Use a **layered, feature-first** architecture:
