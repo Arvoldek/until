@@ -1,0 +1,26 @@
+# Project-level Vibe configuration for the Until app.
+#
+# Model aliases used by the "implement issue" workflow agents (.vibe/agents/*.toml).
+# All point at the same hosted model as the session default, but with distinct
+# thinking (effort) levels:
+#   - until-analyzer  -> high   (deep analysis and planning)
+#   - until-coder     -> medium (focused implementation)
+#   - until-reviewer  -> high   (strict review)
+
+[[models]]
+name = "mistral-vibe-cli-latest"
+provider = "mistral"
+alias = "until-analyzer"
+thinking = "high"
+
+[[models]]
+name = "mistral-vibe-cli-latest"
+provider = "mistral"
+alias = "until-coder"
+thinking = "medium"
+
+[[models]]
+name = "mistral-vibe-cli-latest"
+provider = "mistral"
+alias = "until-reviewer"
+thinking = "high"
